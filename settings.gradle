@@ -1,3 +1,3 @@
-include ':guide'
+include ':pageGuide'
 include ':app'
 rootProject.name = "guide"
