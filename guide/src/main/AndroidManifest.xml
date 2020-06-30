@@ -1,0 +1,12 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.sck.guide">
+
+    <application>
+        <activity android:name=".GuideActivity"
+            android:theme="@style/guideStyle"
+            >
+        </activity>
+
+    </application>
+
+</manifest>
