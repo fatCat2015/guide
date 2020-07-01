@@ -8,12 +8,4 @@
     tools:background="#80000000"
     >
 
-    <ImageView
-        android:id="@+id/ivHighlight"
-        android:layout_width="wrap_content"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        android:layout_height="wrap_content">
-    </ImageView>
-
 </androidx.constraintlayout.widget.ConstraintLayout>

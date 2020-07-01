@@ -9,7 +9,9 @@ import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Bundle
 import android.view.*
+import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.ContentFrameLayout
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory
@@ -26,12 +28,13 @@ class GuideActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         requestedOrientation=GuideManager.screenOrientation
         transparentStatusBar(this)
+        parseIntent()
         setContentView(R.layout.activity_guide)
         clGuideCover.setBackgroundColor(GuideManager.guideBgColor)
-        parseIntent()
         showGuide()
         setListeners()
     }
+
     private fun parseIntent(){
         var guideParams=intent.getSerializableExtra("guideParams")
         if(guideParams is ArrayList<*>){
@@ -41,22 +44,39 @@ class GuideActivity : AppCompatActivity() {
     }
 
     private fun showGuide(){
-        var guideParams=guideList.peek()
+        var guideParams=guideList.pop()
         guideParams?.let {
-            showHighlightView(it)
-            removeOtherGuideView()
-            showGuideLayout(guideParams)
+            clGuideCover.removeAllViews()
+            showGuideLayout(it)
             GuideManager.saveShowState(it)
         }
     }
 
-    private fun showHighlightView(guideParams:GuideParams){
+    private fun showGuideLayout(guideParams:GuideParams){
+        var guideLayoutResId=guideParams.guideLayoutResId
+        if(guideLayoutResId!=0){
+            var guideView=LayoutInflater.from(this).inflate(guideLayoutResId,clGuideCover,false)
+            var lp=ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.WRAP_CONTENT,ConstraintLayout.LayoutParams.WRAP_CONTENT)
+            clGuideCover.addView(guideView,lp)
+            var ivHighlight=guideView.findViewById<ImageView>(R.id.ivHighlight)
+            setHighlightView(guideParams,ivHighlight)
+            ivHighlight.setOnClickListener {
+                handleIvHighlightClick()
+            }
+        }
+    }
+
+    private fun setHighlightView(guideParams:GuideParams,ivHighlight:ImageView){
+        var lp= ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.WRAP_CONTENT,ConstraintLayout.LayoutParams.WRAP_CONTENT)
+        lp.topToTop=ConstraintLayout.LayoutParams.PARENT_ID
+        lp.leftToLeft=ConstraintLayout.LayoutParams.PARENT_ID
+        lp.leftMargin= guideParams.leftOffset-guideParams.padding[0]
+        lp.topMargin= guideParams.topOffset-guideParams.padding[1]
+        ivHighlight.layoutParams=lp
+
         ivHighlight.setPadding(guideParams.padding[0],guideParams.padding[1],guideParams.padding[2],guideParams.padding[3])
         ivHighlight.background=createHighlightViewBg(guideParams.radius)
-        var highlightImageLayoutParams=ivHighlight.layoutParams as ViewGroup.MarginLayoutParams
-        highlightImageLayoutParams.topMargin=guideParams.topOffset-guideParams.padding[1]
-        highlightImageLayoutParams.leftMargin=guideParams.leftOffset-guideParams.padding[0]
-        ivHighlight.layoutParams=highlightImageLayoutParams
+
         guideParams.highlightImage?.let{imageBytes ->
             var bitmap=BitmapFactory.decodeByteArray(imageBytes,0,imageBytes.size)
             var imageDrawable= RoundedBitmapDrawableFactory.create(resources,bitmap)
@@ -64,6 +84,7 @@ class GuideActivity : AppCompatActivity() {
             ivHighlight.setImageDrawable(imageDrawable)
         }
     }
+
 
     private fun createHighlightViewBg(radius:Float):Drawable{
         var drawable=GradientDrawable()
@@ -73,66 +94,21 @@ class GuideActivity : AppCompatActivity() {
     }
 
 
-    private fun removeOtherGuideView(){
-        var needRemoveViewList=ArrayList<View>()
-        var childCount=clGuideCover.childCount
-        for(index in 0 until childCount){
-            var child=clGuideCover.getChildAt(index)
-            if(child.id!=R.id.ivHighlight){
-                needRemoveViewList.add(child)
-            }
-        }
-        needRemoveViewList.forEach {
-            clGuideCover.removeView(it)
-        }
-    }
-
-    private fun showGuideLayout(guideParams:GuideParams){
-        var guideLayoutResId=guideParams.guideLayoutResId
-        if(guideLayoutResId!=0){
-            var guideView=LayoutInflater.from(this).inflate(guideLayoutResId,clGuideCover,false)
-            var lp=ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.WRAP_CONTENT,ConstraintLayout.LayoutParams.WRAP_CONTENT)
-            when(guideParams.gravity){
-                Gravity.LEFT ->{
-                    lp.topToTop=R.id.ivHighlight
-                    lp.bottomToBottom=R.id.ivHighlight
-                    lp.rightToLeft=R.id.ivHighlight
-                }
-                Gravity.TOP ->{
-                    lp.bottomToTop=R.id.ivHighlight
-                    lp.leftToLeft=R.id.ivHighlight
-                    lp.rightToRight=R.id.ivHighlight
-                }
-                Gravity.RIGHT ->{
-                    lp.topToTop=R.id.ivHighlight
-                    lp.bottomToBottom=R.id.ivHighlight
-                    lp.leftToRight=R.id.ivHighlight
-                }
-                Gravity.BOTTOM ->{
-                    lp.topToBottom=R.id.ivHighlight
-                    lp.leftToLeft=R.id.ivHighlight
-                    lp.rightToRight=R.id.ivHighlight
-                }
-            }
-            clGuideCover.addView(guideView,lp)
-        }
-    }
 
 
     private fun setListeners(){
         clGuideCover.setOnClickListener {
             if(GuideManager.cancelableOnTouchOutside){
-                ivHighlight.performClick()
+                handleIvHighlightClick()
             }
         }
-        ivHighlight.setOnClickListener {
-            guideList.pop()
-            if(guideList.isEmpty()){
-                finish()
-            }else{
-                showGuide()
-            }
+    }
 
+    private fun handleIvHighlightClick(){
+        if(guideList.isEmpty()){
+            finish()
+        }else{
+            showGuide()
         }
     }
 
