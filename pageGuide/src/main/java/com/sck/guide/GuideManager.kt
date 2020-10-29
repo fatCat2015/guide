@@ -12,11 +12,9 @@ object GuideManager {
 
     var guideBgColor= Color.parseColor("#99000000")
 
-    internal var cancelable=false
-
     internal var cancelableOnTouchOutside=true
 
-    private var debugModel=true
+    internal var debugModel=true
 
     private var sp:SharedPreferences?=null
 
@@ -26,17 +24,11 @@ object GuideManager {
     }
 
 
-    private val guideList=ArrayList<GuideParams>()
+    private val guideList= mutableListOf<GuideParams>()
 
-    fun begin(cancelable:Boolean=false,cancelableOnTouchOutside:Boolean=true): GuideManager {
-        this.cancelable=cancelable
+    fun begin(cancelableOnTouchOutside:Boolean=true): GuideManager {
         this.cancelableOnTouchOutside=cancelableOnTouchOutside
         guideList.clear()
-        return this
-    }
-
-    fun add(guideParams: GuideParams): GuideManager {
-        guideList.add(guideParams)
         return this
     }
 
@@ -45,7 +37,7 @@ object GuideManager {
         return this
     }
 
-    fun add( guideParamsList: List<GuideParams>): GuideManager {
+    fun add(guideParamsList: Collection<GuideParams>): GuideManager {
         guideList.addAll(guideParamsList)
         return this
     }

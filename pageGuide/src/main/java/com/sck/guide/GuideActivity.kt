@@ -8,6 +8,7 @@ import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.*
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
@@ -19,7 +20,7 @@ import kotlinx.android.synthetic.main.activity_guide.*
 import java.util.*
 import kotlin.collections.ArrayList
 
-class GuideActivity : AppCompatActivity() {
+internal class GuideActivity : AppCompatActivity() {
 
 
     private var guideList=LinkedList<GuideParams>()
@@ -36,47 +37,56 @@ class GuideActivity : AppCompatActivity() {
     }
 
     private fun parseIntent(){
-        var guideParams=intent.getSerializableExtra("guideParams")
-        if(guideParams is ArrayList<*>){
-            guideList.clear()
-            guideList.addAll(guideParams as ArrayList<GuideParams>)
-        }
+        var guideParams=intent.getSerializableExtra("guideParams") as ArrayList<GuideParams>
+        guideList.clear()
+        guideList.addAll(guideParams)
     }
 
     private fun showGuide(){
-        var guideParams=guideList.pop()
-        guideParams?.let {
+        if(guideList.isNotEmpty()){
+            var guideParam=guideList.pop()
             clGuideCover.removeAllViews()
-            showGuideLayout(it)
-            GuideManager.saveShowState(it)
+            showGuideLayout(guideParam)
+            GuideManager.saveShowState(guideParam)
         }
     }
 
     private fun showGuideLayout(guideParams:GuideParams){
-        var guideLayoutResId=guideParams.guideLayoutResId
-        if(guideLayoutResId!=0){
-            var guideView=LayoutInflater.from(this).inflate(guideLayoutResId,clGuideCover,false)
-            var lp=ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.WRAP_CONTENT,ConstraintLayout.LayoutParams.WRAP_CONTENT)
-            clGuideCover.addView(guideView,lp)
-            var ivHighlight=guideView.findViewById<ImageView>(R.id.ivHighlight)
-            setHighlightView(guideParams,ivHighlight)
-            ivHighlight.setOnClickListener {
-                handleIvHighlightClick()
+        runCatching {
+            LayoutInflater.from(this).inflate(guideParams.guideLayoutResId,clGuideCover)
+            val guideView=clGuideCover.getChildAt(0)
+            offsetGuideView(guideParams,guideView)
+        }.onFailure {
+            if(GuideManager.debugModel){
+                Log.i(TAG, "showGuideLayout onFailure: ${it.message}")
+            }
+        }
+
+    }
+
+    private fun offsetGuideView(guideParams:GuideParams,guideView:View){
+        guideView.alpha=0F
+        guideView.post {
+            val ivHighLight=guideView.findViewById<ImageView>(R.id.ivHighlight)
+            setIvHighLight(guideParams,ivHighLight)
+            ivHighLight.post{
+                val outLocation=IntArray(2)
+                ivHighLight.getLocationOnScreen(outLocation)
+                val xOffset=guideParams.leftOffset-(outLocation[0]+guideParams.padding[0])
+                val yOffset=guideParams.topOffset-(outLocation[1]+guideParams.padding[1])
+                guideView.translationX=xOffset.toFloat()
+                guideView.translationY=yOffset.toFloat()
+                guideView.alpha=1F
             }
         }
     }
 
-    private fun setHighlightView(guideParams:GuideParams,ivHighlight:ImageView){
-        var lp= ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.WRAP_CONTENT,ConstraintLayout.LayoutParams.WRAP_CONTENT)
-        lp.topToTop=ConstraintLayout.LayoutParams.PARENT_ID
-        lp.leftToLeft=ConstraintLayout.LayoutParams.PARENT_ID
-        lp.leftMargin= guideParams.leftOffset-guideParams.padding[0]
-        lp.topMargin= guideParams.topOffset-guideParams.padding[1]
-        ivHighlight.layoutParams=lp
-
+    private fun setIvHighLight(guideParams:GuideParams,ivHighlight: ImageView){
         ivHighlight.setPadding(guideParams.padding[0],guideParams.padding[1],guideParams.padding[2],guideParams.padding[3])
-        ivHighlight.background=createHighlightViewBg(guideParams.radius)
-
+        ivHighlight.background=GradientDrawable().apply {
+            setColor(Color.RED)
+            cornerRadius=guideParams.radius
+        }
         guideParams.highlightImage?.let{imageBytes ->
             var bitmap=BitmapFactory.decodeByteArray(imageBytes,0,imageBytes.size)
             var imageDrawable= RoundedBitmapDrawableFactory.create(resources,bitmap)
@@ -84,15 +94,6 @@ class GuideActivity : AppCompatActivity() {
             ivHighlight.setImageDrawable(imageDrawable)
         }
     }
-
-
-    private fun createHighlightViewBg(radius:Float):Drawable{
-        var drawable=GradientDrawable()
-        drawable.setColor(Color.WHITE)
-        drawable.cornerRadius=radius
-        return drawable
-    }
-
 
 
 
@@ -122,6 +123,8 @@ class GuideActivity : AppCompatActivity() {
             activity.overridePendingTransition(R.anim.guide_enter,0)
         }
 
+        const val TAG="GuideActivity"
+
     }
 
     override fun finish() {
@@ -130,8 +133,8 @@ class GuideActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        if(GuideManager.cancelable){
-            super.onBackPressed()
+        if(GuideManager.cancelableOnTouchOutside){
+            handleIvHighlightClick()
         }
     }
 

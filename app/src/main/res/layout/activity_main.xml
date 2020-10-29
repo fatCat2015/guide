@@ -19,6 +19,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         android:layout_margin="100dp"
+        android:background="#0f0"
         android:textColor="#333"
         android:layout_height="wrap_content">
     </TextView>

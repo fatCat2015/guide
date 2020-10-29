@@ -15,8 +15,8 @@ class MainActivity : AppCompatActivity() {
         GuideManager.init(this, true)
         tv.setOnClickListener {
             GuideManager.begin()
-                .add(GuideParams(tv, R.layout.guide_demo_bottom,"a",padding = intArrayOf(0,0,0,0),radius = 15F))
-                .add(GuideParams(tv1, R.layout.guide_demo_left, "b",gravity = Gravity.LEFT))
+                .add(GuideParams(tv, R.layout.guide_demo_bottom,"a",padding = intArrayOf(30,30,30,30),radius = 15F))
+                .add(GuideParams(tv1, R.layout.guide_demo_left, "b"))
                 .show(this)
         }
     }
