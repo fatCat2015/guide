@@ -84,7 +84,7 @@ internal class GuideActivity : AppCompatActivity() {
     private fun setIvHighLight(guideParams:GuideParams,ivHighlight: ImageView){
         ivHighlight.setPadding(guideParams.padding[0],guideParams.padding[1],guideParams.padding[2],guideParams.padding[3])
         ivHighlight.background=GradientDrawable().apply {
-            setColor(Color.RED)
+            setColor(Color.WHITE)
             cornerRadius=guideParams.radius
         }
         guideParams.highlightImage?.let{imageBytes ->
